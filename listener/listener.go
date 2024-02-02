@@ -89,4 +89,6 @@ func (l *Listener) handler(w http.ResponseWriter, r *http.Request) {
 	if _, err := io.WriteString(w, "ok"); err != nil {
 		fmt.Printf("error writing response: %s\n", err)
 	}
+
+	l.Sender.ProcessVKMessage(result)
 }
