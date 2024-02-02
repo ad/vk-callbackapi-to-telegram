@@ -11,18 +11,21 @@ import (
 
 	conf "github.com/ad/vk-callbackapi-to-telegram/config"
 	"github.com/ad/vk-callbackapi-to-telegram/models"
+	"github.com/ad/vk-callbackapi-to-telegram/sender"
 )
 
 type Listener struct {
 	config *conf.Config
 	Server *http.Server
+	Sender *sender.Sender
 }
 
 const keyServerAddr = "serverAddr"
 
-func InitListener(config *conf.Config) (*Listener, error) {
+func InitListener(config *conf.Config, s *sender.Sender) (*Listener, error) {
 	listener := &Listener{
 		config: config,
+		Sender: s,
 	}
 
 	mux := http.NewServeMux()

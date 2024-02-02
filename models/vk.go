@@ -34,20 +34,21 @@ type VkCallbackRequest struct {
 }
 
 type Message struct {
-	ID            int    `json:"id"`
-	Date          int    `json:"date,omitempty"`
-	UserID        int    `json:"user_id,omitempty"`
-	FromID        int    `json:"from_id,omitempty"`
-	Title         string `json:"title,omitempty"`
-	Text          string `json:"text,omitempty"`
-	Body          string `json:"body,omitempty"`
-	Action        Action `json:"action,omitempty"`
-	AdminAuthorID int    `json:"admin_author_id,omitempty"`
-	IsCropped     bool   `json:"is_cropped,omitempty"`
-	MembersCount  int    `json:"members_count,omitempty"`
-	PinnedAt      int    `json:"pinned_at,omitempty"`
-	Out           int    `json:"out,omitempty"`
-	Deleted       int    `json:"deleted,omitempty"`
+	ID                    int    `json:"id"`
+	ConversationMessageID int    `json:"conversation_message_id,omitempty"`
+	Date                  int    `json:"date,omitempty"`
+	UserID                int    `json:"user_id,omitempty"`
+	FromID                int    `json:"from_id,omitempty"`
+	Title                 string `json:"title,omitempty"`
+	Text                  string `json:"text,omitempty"`
+	Body                  string `json:"body,omitempty"`
+	Action                Action `json:"action,omitempty"`
+	AdminAuthorID         int    `json:"admin_author_id,omitempty"`
+	IsCropped             bool   `json:"is_cropped,omitempty"`
+	MembersCount          int    `json:"members_count,omitempty"`
+	PinnedAt              int    `json:"pinned_at,omitempty"`
+	Out                   int    `json:"out,omitempty"`
+	Deleted               int    `json:"deleted,omitempty"`
 }
 
 type Action struct {

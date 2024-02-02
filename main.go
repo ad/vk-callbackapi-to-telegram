@@ -9,6 +9,7 @@ import (
 
 	conf "github.com/ad/vk-callbackapi-to-telegram/config"
 	lstnr "github.com/ad/vk-callbackapi-to-telegram/listener"
+	sndr "github.com/ad/vk-callbackapi-to-telegram/sender"
 )
 
 var (
@@ -29,7 +30,18 @@ func main() {
 
 	config = confLoad
 
-	_, errInitListener := lstnr.InitListener(config)
+	sender, errInitSender := sndr.InitSender(config)
+	if errInitSender != nil {
+		log.Fatal(errInitSender)
+	}
+
+	sender.MakeRequestDeferred(sndr.DeferredMessage{
+		Method: "sendMessage",
+		ChatID: config.TelegramTargetID,
+		Text:   "started",
+	}, sender.SendResult)
+
+	_, errInitListener := lstnr.InitListener(config, sender)
 	if errInitListener != nil {
 		log.Fatal(errInitListener)
 	}
@@ -43,9 +55,7 @@ func main() {
 		done <- true
 	}()
 
-	if config.Debug {
-		fmt.Println("awaiting signal")
-	}
+	fmt.Println("started")
 
 	<-done
 	fmt.Println("exiting")
