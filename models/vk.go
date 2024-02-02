@@ -20,6 +20,7 @@ type VkCallbackRequest struct {
 		PostponedID  string  `json:"postponed_id,omitempty"`
 		PostOwnerID  int     `json:"post_owner_id,omitempty"`
 		PostID       int     `json:"post_id,omitempty"`
+		VideoID      int     `json:"video_id,omitempty"`
 		PhotoOwnerID int     `json:"photo_owner_id,omitempty"`
 		PhotoID      int     `json:"photo_id,omitempty"`
 		TopicID      int     `json:"topic_id,omitempty"`
