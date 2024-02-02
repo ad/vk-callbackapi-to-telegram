@@ -1,5 +1,5 @@
 {
-  "version": "0.0.1",
+  "version": "0.0.2",
   "name": "vk-callbackapi-to-telegram",
   "slug": "vk-callbackapi-to-telegram",
   "description": "",
@@ -13,6 +13,18 @@
     "armv7",
     "i386"
   ],
+  "webui": "http://[HOST]:[PORT:3333]/",
+  "panel_admin": true,
+  "panel_icon": "mdi:home-city-outline",
+  "panel_title": "vk-callbackapi-to-telegram",
+  "ingress": true,
+  "ingress_port": 3333,
+  "ports": {
+    "3333/tcp": 3333
+  },
+  "ports_description": {
+    "3333/tcp": "GUI http access"
+  },
   "hassio_api": true,
   "hassio_role": "default",
   "homeassistant_api": true,
