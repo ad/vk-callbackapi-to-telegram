@@ -7,6 +7,8 @@ import (
 	"io"
 	"os"
 	"strconv"
+
+	_ "github.com/joho/godotenv/autoload"
 )
 
 const ConfigFileName = "/data/options.json"
