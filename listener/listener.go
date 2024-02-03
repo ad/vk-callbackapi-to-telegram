@@ -63,13 +63,11 @@ func (l *Listener) handler(w http.ResponseWriter, r *http.Request) {
 	bodyValue, _ := io.ReadAll(r.Body)
 	r.Body.Close()
 
-	fmt.Printf("%s: got / request\n%s\n%s\n", ctx.Value(keyServerAddr), r.URL.String(), string(bodyValue))
-
 	result := &models.VkCallbackRequest{}
 	errUnmarshal := json.Unmarshal(bodyValue, result)
 
 	if errUnmarshal != nil {
-		fmt.Printf("error unmarshalling request: %s\n", errUnmarshal)
+		// fmt.Printf("error unmarshalling request: %s\n", errUnmarshal)
 
 		if _, err := io.WriteString(w, "ok"); err != nil {
 			fmt.Printf("error writing response: %s\n", err)
@@ -77,6 +75,8 @@ func (l *Listener) handler(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+
+	fmt.Printf("%s: got / request\n%s\n%s\n", ctx.Value(keyServerAddr), r.URL.String(), string(bodyValue))
 
 	if result.Type == "confirmation" {
 		if _, err := io.WriteString(w, l.config.VkConfirmation); err != nil {
