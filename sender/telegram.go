@@ -28,9 +28,12 @@ func InitSender(config *conf.Config) (*Sender, error) {
 	}
 
 	opts := []bot.Option{
-		bot.WithDefaultHandler(sender.Handler),
+		bot.WithDefaultHandler(handler),
 		bot.WithSkipGetMe(),
-		// bot.WithDebug(),
+	}
+
+	if config.Debug {
+		opts = append(opts, bot.WithDebug())
 	}
 
 	b, newBotError := bot.New(config.TelegramToken, opts...)
@@ -45,7 +48,7 @@ func InitSender(config *conf.Config) (*Sender, error) {
 	return sender, nil
 }
 
-func (s *Sender) Handler(ctx context.Context, b *bot.Bot, update *bm.Update) {
+func handler(ctx context.Context, b *bot.Bot, update *bm.Update) {
 	cbdToSend, err := json.Marshal(update)
 	if err != nil {
 		fmt.Printf("%#v, err %s", update, err)

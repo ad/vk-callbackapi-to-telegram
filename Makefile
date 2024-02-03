@@ -1,6 +1,6 @@
 BUILD_VERSION=$(shell cat config.json | awk 'BEGIN { FS="\""; RS="," }; { if ($$2 == "version") {print $$4} }')
 
-release: release_armhf release_aarch64 release_i386 release_amd64 release_armv7
+release: release_armhf release_aarch64 #release_i386 release_amd64 release_armv7
 
 release_armhf:
 	@docker build -t danielapatin/vk-callbackapi-to-telegram-armhf:${BUILD_VERSION} --build-arg BUILD_ARCH=armhf --build-arg BUILD_VERSION=${BUILD_VERSION} .
