@@ -58,8 +58,6 @@ func InitListener(config *conf.Config, s *sender.Sender) (*Listener, error) {
 }
 
 func (l *Listener) handler(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
 	bodyValue, _ := io.ReadAll(r.Body)
 	r.Body.Close()
 
@@ -67,8 +65,6 @@ func (l *Listener) handler(w http.ResponseWriter, r *http.Request) {
 	errUnmarshal := json.Unmarshal(bodyValue, result)
 
 	if errUnmarshal != nil {
-		// fmt.Printf("error unmarshalling request: %s\n", errUnmarshal)
-
 		if _, err := io.WriteString(w, "ok"); err != nil {
 			fmt.Printf("error writing response: %s\n", err)
 		}
@@ -76,7 +72,9 @@ func (l *Listener) handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("%s: got / request\n%s\n%s\n", ctx.Value(keyServerAddr), r.URL.String(), string(bodyValue))
+	if l.config.Debug {
+		fmt.Printf("%s: %s\n", result.Type, string(bodyValue))
+	}
 
 	if result.Type == "confirmation" {
 		if _, err := io.WriteString(w, l.config.VkConfirmation); err != nil {

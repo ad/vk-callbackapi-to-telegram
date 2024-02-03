@@ -17,10 +17,13 @@ const ConfigFileName = "/data/options.json"
 type Config struct {
 	TelegramTarget string `json:"TELEGRAM_TARGET"`
 	TelegramToken  string `json:"TELEGRAM_TOKEN"`
+	TelegramAdmin  string `json:"TELEGRAM_ADMIN_ID"`
+
 	ListenPort     int    `json:"LISTEN_PORT"`
 	VkConfirmation string `json:"VK_CONFIRMATION"`
 
 	TelegramTargetID int64
+	TelegramAdminID  int64
 
 	Debug bool `json:"DEBUG"`
 }
@@ -44,6 +47,8 @@ func InitConfig() (*Config, error) {
 	if !initFromFile {
 		flag.StringVar(&config.TelegramTarget, "TELEGRAM_TARGET", lookupEnvOrString("TELEGRAM_TARGET", config.TelegramTarget), "TELEGRAM_TARGET")
 		flag.StringVar(&config.TelegramToken, "TELEGRAM_TOKEN", lookupEnvOrString("TELEGRAM_TOKEN", config.TelegramToken), "TELEGRAM_TOKEN")
+		flag.StringVar(&config.TelegramAdmin, "TELEGRAM_ADMIN_ID", lookupEnvOrString("TELEGRAM_ADMIN_ID", config.TelegramAdmin), "TELEGRAM_ADMIN_ID")
+
 		flag.StringVar(&config.VkConfirmation, "VK_CONFIRMATION", lookupEnvOrString("VK_CONFIRMATION", config.VkConfirmation), "VK_CONFIRMATION")
 		flag.IntVar(&config.ListenPort, "LISTEN_PORT", lookupEnvOrInt("LISTEN_PORT", config.ListenPort), "LISTEN_PORT")
 
@@ -55,6 +60,12 @@ func InitConfig() (*Config, error) {
 	if config.TelegramTarget != "" {
 		if chatID, err := strconv.ParseInt(config.TelegramTarget, 10, 64); err == nil {
 			config.TelegramTargetID = chatID
+		}
+	}
+
+	if config.TelegramAdmin != "" {
+		if chatID, err := strconv.ParseInt(config.TelegramAdmin, 10, 64); err == nil {
+			config.TelegramAdminID = chatID
 		}
 	}
 

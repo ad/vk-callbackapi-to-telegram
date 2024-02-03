@@ -35,18 +35,18 @@ func main() {
 		log.Fatal(errInitSender)
 	}
 
-	sender.MakeRequestDeferred(sndr.DeferredMessage{
-		Method: "sendMessage",
-		ChatID: config.TelegramTargetID,
-		Text:   "started",
-	}, sender.SendResult)
+	if config.TelegramAdminID != 0 {
+		sender.MakeRequestDeferred(sndr.DeferredMessage{
+			Method: "sendMessage",
+			ChatID: config.TelegramAdminID,
+			Text:   "Bot restarted",
+		}, sender.SendResult)
+	}
 
 	_, errInitListener := lstnr.InitListener(config, sender)
 	if errInitListener != nil {
 		log.Fatal(errInitListener)
 	}
-
-	// defer listener.Disconnect()
 
 	go func() {
 		sig := <-sigs

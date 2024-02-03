@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
+  "version": "0.1.1",
   "name": "vk-callbackapi-to-telegram",
   "slug": "vk-callbackapi-to-telegram",
   "description": "",
@@ -17,13 +17,11 @@
   "panel_admin": true,
   "panel_icon": "mdi:home-city-outline",
   "panel_title": "vk-callbackapi-to-telegram",
-  "ingress": true,
-  "ingress_port": 3333,
   "ports": {
     "3333/tcp": 3333
   },
   "ports_description": {
-    "3333/tcp": "GUI http access"
+    "3333/tcp": "Exposed port"
   },
   "hassio_api": true,
   "hassio_role": "default",
@@ -32,6 +30,7 @@
   "options": {
     "TELEGRAM_TARGET": "-",
     "TELEGRAM_TOKEN": "-",
+    "TELEGRAM_ADMIN_ID": "-",
     "VK_CONFIRMATION": "",
     "LISTEN_PORT": 3333,
     "DEBUG": false
@@ -39,6 +38,7 @@
   "schema": {
     "TELEGRAM_TARGET": "str",
     "TELEGRAM_TOKEN": "str",
+    "TELEGRAM_ADMIN_ID": "str",
     "VK_CONFIRMATION": "str",
     "LISTEN_PORT": "int",
     "DEBUG": "bool"

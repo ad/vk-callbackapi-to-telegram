@@ -2,7 +2,6 @@ package sender
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
 
@@ -28,7 +27,7 @@ func InitSender(config *conf.Config) (*Sender, error) {
 	}
 
 	opts := []bot.Option{
-		bot.WithDefaultHandler(handler),
+		bot.WithDefaultHandler(sender.handler),
 		bot.WithSkipGetMe(),
 	}
 
@@ -49,13 +48,10 @@ func InitSender(config *conf.Config) (*Sender, error) {
 	return sender, nil
 }
 
-func handler(ctx context.Context, b *bot.Bot, update *bm.Update) {
-	cbdToSend, err := json.Marshal(update)
-	if err != nil {
-		fmt.Printf("%#v, err %s", update, err)
-
-		return
+func (s *Sender) handler(ctx context.Context, b *bot.Bot, update *bm.Update) {
+	if s.config.Debug {
+		if update.Message != nil && update.Message.From != nil && update.Message.Chat.ID != 0 && update.Message.Text != "" {
+			fmt.Printf("%d -> %d: %s\n", update.Message.From.ID, update.Message.Chat.ID, update.Message.Text)
+		}
 	}
-
-	fmt.Printf("получено сообщение: %s", string(cbdToSend))
 }
