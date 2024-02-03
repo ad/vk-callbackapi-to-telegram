@@ -41,9 +41,10 @@ func InitSender(config *conf.Config) (*Sender, error) {
 		return nil, fmt.Errorf("start bot error: %s", newBotError)
 	}
 
-	sender.Bot = b
-
+	go b.Start(context.Background())
 	go sender.sendDeferredMessages()
+
+	sender.Bot = b
 
 	return sender, nil
 }
