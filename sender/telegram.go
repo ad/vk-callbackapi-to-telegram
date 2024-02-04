@@ -31,9 +31,9 @@ func InitSender(config *conf.Config) (*Sender, error) {
 		bot.WithSkipGetMe(),
 	}
 
-	if config.Debug {
-		opts = append(opts, bot.WithDebug())
-	}
+	// if config.Debug {
+	// 	opts = append(opts, bot.WithDebug())
+	// }
 
 	b, newBotError := bot.New(config.TelegramToken, opts...)
 	if newBotError != nil {
