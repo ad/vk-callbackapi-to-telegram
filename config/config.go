@@ -19,8 +19,10 @@ type Config struct {
 	TelegramToken  string `json:"TELEGRAM_TOKEN"`
 	TelegramAdmin  string `json:"TELEGRAM_ADMIN_ID"`
 
-	ListenPort     int    `json:"LISTEN_PORT"`
-	VkConfirmation string `json:"VK_CONFIRMATION"`
+	ListenPort int `json:"LISTEN_PORT"`
+
+	VkSecret       string `json:"VK_CONFIRMATION"`
+	VkConfirmation string `json:"VK_SECRET"`
 
 	TelegramTargetID int64
 	TelegramAdminID  int64
@@ -50,6 +52,8 @@ func InitConfig() (*Config, error) {
 		flag.StringVar(&config.TelegramAdmin, "TELEGRAM_ADMIN_ID", lookupEnvOrString("TELEGRAM_ADMIN_ID", config.TelegramAdmin), "TELEGRAM_ADMIN_ID")
 
 		flag.StringVar(&config.VkConfirmation, "VK_CONFIRMATION", lookupEnvOrString("VK_CONFIRMATION", config.VkConfirmation), "VK_CONFIRMATION")
+		flag.StringVar(&config.VkSecret, "VK_SECRET", lookupEnvOrString("VK_SECRET", config.VkSecret), "VK_SECRET")
+
 		flag.IntVar(&config.ListenPort, "LISTEN_PORT", lookupEnvOrInt("LISTEN_PORT", config.ListenPort), "LISTEN_PORT")
 
 		flag.BoolVar(&config.Debug, "DEBUG", lookupEnvOrBool("DEBUG", config.Debug), "Debug")

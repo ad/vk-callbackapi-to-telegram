@@ -76,6 +76,16 @@ func (l *Listener) handler(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("%s: %s\n", result.Type, string(bodyValue))
 	}
 
+	if l.config.VkSecret != "" && result.Secret != l.config.VkSecret {
+		fmt.Printf("secret mistmatch %s != %s \n", l.config.VkSecret, result.Secret)
+
+		if _, err := io.WriteString(w, "ok"); err != nil {
+			fmt.Printf("error writing response: %s\n", err)
+		}
+
+		return
+	}
+
 	if result.Type == "confirmation" {
 		if _, err := io.WriteString(w, l.config.VkConfirmation); err != nil {
 			fmt.Printf("error writing response: %s\n", err)

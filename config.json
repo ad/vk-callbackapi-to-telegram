@@ -1,5 +1,5 @@
 {
-  "version": "0.1.2",
+  "version": "0.2.0",
   "name": "vk-callbackapi-to-telegram",
   "slug": "vk-callbackapi-to-telegram",
   "description": "",
@@ -32,6 +32,7 @@
     "TELEGRAM_TOKEN": "-",
     "TELEGRAM_ADMIN_ID": "-",
     "VK_CONFIRMATION": "",
+    "VK_SECRET": "",
     "LISTEN_PORT": 3333,
     "DEBUG": false
   },
@@ -40,6 +41,7 @@
     "TELEGRAM_TOKEN": "str",
     "TELEGRAM_ADMIN_ID": "str",
     "VK_CONFIRMATION": "str",
+    "VK_SECRET": "str",
     "LISTEN_PORT": "int",
     "DEBUG": "bool"
   }
