@@ -20,6 +20,8 @@ type Listener struct {
 	Sender *sender.Sender
 }
 
+type serverContextKey string
+
 const keyServerAddr = "serverAddr"
 
 func InitListener(config *conf.Config, s *sender.Sender) (*Listener, error) {
@@ -37,7 +39,7 @@ func InitListener(config *conf.Config, s *sender.Sender) (*Listener, error) {
 		Addr:    ":3333",
 		Handler: mux,
 		BaseContext: func(l net.Listener) context.Context {
-			ctx = context.WithValue(ctx, keyServerAddr, l.Addr().String())
+			ctx = context.WithValue(ctx, serverContextKey(keyServerAddr), l.Addr().String())
 			return ctx
 		},
 	}
