@@ -80,6 +80,9 @@ func (l *Listener) handler(w http.ResponseWriter, r *http.Request) {
 
 	if l.config.VkSecret != "" && result.Secret != l.config.VkSecret {
 		fmt.Printf("secret mistmatch %s != %s \n", l.config.VkSecret, result.Secret)
+		if l.config.Debug {
+			fmt.Printf("%s\n", string(bodyValue))
+		}
 
 		if _, err := io.WriteString(w, "ok"); err != nil {
 			fmt.Printf("error writing response: %s\n", err)
