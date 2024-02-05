@@ -21,8 +21,8 @@ type Config struct {
 
 	ListenPort int `json:"LISTEN_PORT"`
 
-	VkSecret       string `json:"VK_CONFIRMATION"`
-	VkConfirmation string `json:"VK_SECRET"`
+	VkConfirmation string `json:"VK_CONFIRMATION"`
+	VkSecret       string `json:"VK_SECRET"`
 
 	TelegramTargetID int64
 	TelegramAdminID  int64
