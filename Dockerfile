@@ -11,7 +11,8 @@ RUN apk update && apk add --no-cache ca-certificates && update-ca-certificates
 WORKDIR $GOPATH/src/app
 COPY . .
 COPY config.json /config.json
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-w -s" -o /go/bin/app main.go
+RUN echo "Building for ${TARGETOS}/${TARGETARCH} with version ${BUILD_VERSION}"
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-w -s -X main.version=${BUILD_VERSION}" -o /go/bin/app main.go
 
 FROM --platform=${TARGETPLATFORM:-linux/amd64} scratch
 WORKDIR /app/

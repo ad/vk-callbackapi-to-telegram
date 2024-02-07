@@ -13,10 +13,13 @@ import (
 )
 
 var (
-	config *conf.Config
+	config  *conf.Config
+	version = "dev"
 )
 
 func main() {
+	fmt.Printf("starting version %s\n", version)
+
 	sigs := make(chan os.Signal, 1)
 
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
