@@ -2,10 +2,8 @@ package app
 
 import (
 	"context"
-	// "fmt"
 	"io"
-	// "os"
-	// "sync"
+	"os"
 
 	conf "github.com/ad/vk-callbackapi-to-telegram/config"
 	lstnr "github.com/ad/vk-callbackapi-to-telegram/listener"
@@ -17,7 +15,7 @@ var (
 )
 
 func Run(ctx context.Context, w io.Writer, args []string) error {
-	confLoad, errInitConfig := conf.InitConfig()
+	confLoad, errInitConfig := conf.InitConfig(os.Args)
 	if errInitConfig != nil {
 		return errInitConfig
 	}
@@ -41,17 +39,6 @@ func Run(ctx context.Context, w io.Writer, args []string) error {
 	if errInitListener != nil {
 		return errInitListener
 	}
-
-	// var wg sync.WaitGroup
-	// wg.Add(1)
-	// go func() {
-	// 	defer wg.Done()
-	// 	<-ctx.Done()
-	// 	if err := listener.Server.Shutdown(ctx); err != nil {
-	// 		fmt.Fprintf(os.Stderr, "error shutting down http server: %s\n", err)
-	// 	}
-	// }()
-	// wg.Wait()
 
 	return nil
 }

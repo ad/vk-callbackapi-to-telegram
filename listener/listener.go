@@ -51,6 +51,7 @@ func InitListener(config *conf.Config, s *sender.Sender) (*Listener, error) {
 		} else if err != nil {
 			fmt.Printf("error listening for server: %s\n", err)
 		}
+
 		cancelCtx()
 	}(server)
 
@@ -103,5 +104,5 @@ func (l *Listener) handler(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("error writing response: %s\n", err)
 	}
 
-	l.Sender.ProcessVKMessage(result)
+	_ = l.Sender.ProcessVKMessage(result)
 }
