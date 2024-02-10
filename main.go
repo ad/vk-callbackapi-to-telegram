@@ -1,19 +1,16 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
-	conf "github.com/ad/vk-callbackapi-to-telegram/config"
-	lstnr "github.com/ad/vk-callbackapi-to-telegram/listener"
-	sndr "github.com/ad/vk-callbackapi-to-telegram/sender"
+	"github.com/ad/vk-callbackapi-to-telegram/app"
 )
 
 var (
-	config  *conf.Config
 	version = "dev"
 )
 
@@ -26,39 +23,21 @@ func main() {
 
 	done := make(chan bool, 1)
 
-	confLoad, errInitConfig := conf.InitConfig()
-	if errInitConfig != nil {
-		log.Fatal(errInitConfig)
-	}
+	ctx := context.Background()
+	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
+	defer cancel()
 
-	config = confLoad
-
-	sender, errInitSender := sndr.InitSender(config)
-	if errInitSender != nil {
-		log.Fatal(errInitSender)
-	}
-
-	if config.TelegramAdminID != 0 {
-		sender.MakeRequestDeferred(sndr.DeferredMessage{
-			Method: "sendMessage",
-			ChatID: config.TelegramAdminID,
-			Text:   "Bot restarted",
-		}, sender.SendResult)
-	}
-
-	_, errInitListener := lstnr.InitListener(config, sender)
-	if errInitListener != nil {
-		log.Fatal(errInitListener)
+	if err := app.Run(ctx, os.Stdout, os.Args); err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		os.Exit(1)
 	}
 
 	go func() {
 		sig := <-sigs
-		fmt.Println()
 		fmt.Println(sig)
+		cancel()
 		done <- true
 	}()
-
-	fmt.Println("started")
 
 	<-done
 	fmt.Println("exiting")

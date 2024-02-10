@@ -36,7 +36,7 @@ func InitListener(config *conf.Config, s *sender.Sender) (*Listener, error) {
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	server := &http.Server{
-		Addr:    ":3333",
+		Addr:    net.JoinHostPort(config.ListenHost, config.ListenPort),
 		Handler: mux,
 		BaseContext: func(l net.Listener) context.Context {
 			ctx = context.WithValue(ctx, serverContextKey(keyServerAddr), l.Addr().String())

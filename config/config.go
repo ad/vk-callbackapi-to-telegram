@@ -19,7 +19,8 @@ type Config struct {
 	TelegramToken  string `json:"TELEGRAM_TOKEN"`
 	TelegramAdmin  string `json:"TELEGRAM_ADMIN_ID"`
 
-	ListenPort int `json:"LISTEN_PORT"`
+	ListenHost string `json:"LISTEN_HOST"`
+	ListenPort string `json:"LISTEN_PORT"`
 
 	VkConfirmation string `json:"VK_CONFIRMATION"`
 	VkSecret       string `json:"VK_SECRET"`
@@ -31,7 +32,13 @@ type Config struct {
 }
 
 func InitConfig() (*Config, error) {
-	var config = &Config{}
+	var config = &Config{
+		ListenHost: "",
+		ListenPort: "3333",
+
+		Debug: false,
+	}
+
 	var initFromFile = false
 
 	if _, err := os.Stat(ConfigFileName); err == nil {
@@ -47,16 +54,17 @@ func InitConfig() (*Config, error) {
 	}
 
 	if !initFromFile {
-		flag.StringVar(&config.TelegramTarget, "TELEGRAM_TARGET", lookupEnvOrString("TELEGRAM_TARGET", config.TelegramTarget), "TELEGRAM_TARGET")
-		flag.StringVar(&config.TelegramToken, "TELEGRAM_TOKEN", lookupEnvOrString("TELEGRAM_TOKEN", config.TelegramToken), "TELEGRAM_TOKEN")
-		flag.StringVar(&config.TelegramAdmin, "TELEGRAM_ADMIN_ID", lookupEnvOrString("TELEGRAM_ADMIN_ID", config.TelegramAdmin), "TELEGRAM_ADMIN_ID")
+		flag.StringVar(&config.TelegramTarget, "telegramTarget", lookupEnvOrString("TELEGRAM_TARGET", config.TelegramTarget), "TELEGRAM_TARGET")
+		flag.StringVar(&config.TelegramToken, "telegramToken", lookupEnvOrString("TELEGRAM_TOKEN", config.TelegramToken), "TELEGRAM_TOKEN")
+		flag.StringVar(&config.TelegramAdmin, "telegramAdminID", lookupEnvOrString("TELEGRAM_ADMIN_ID", config.TelegramAdmin), "TELEGRAM_ADMIN_ID")
 
-		flag.StringVar(&config.VkConfirmation, "VK_CONFIRMATION", lookupEnvOrString("VK_CONFIRMATION", config.VkConfirmation), "VK_CONFIRMATION")
-		flag.StringVar(&config.VkSecret, "VK_SECRET", lookupEnvOrString("VK_SECRET", config.VkSecret), "VK_SECRET")
+		flag.StringVar(&config.VkConfirmation, "vkConfirmation", lookupEnvOrString("VK_CONFIRMATION", config.VkConfirmation), "VK_CONFIRMATION")
+		flag.StringVar(&config.VkSecret, "vkSecret", lookupEnvOrString("VK_SECRET", config.VkSecret), "VK_SECRET")
 
-		flag.IntVar(&config.ListenPort, "LISTEN_PORT", lookupEnvOrInt("LISTEN_PORT", config.ListenPort), "LISTEN_PORT")
+		flag.StringVar(&config.ListenHost, "listenHost", lookupEnvOrString("LISTEN_HOST", config.ListenHost), "LISTEN_HOST")
+		flag.StringVar(&config.ListenPort, "listenPort", lookupEnvOrString("LISTEN_PORT", config.ListenPort), "LISTEN_PORT")
 
-		flag.BoolVar(&config.Debug, "DEBUG", lookupEnvOrBool("DEBUG", config.Debug), "Debug")
+		flag.BoolVar(&config.Debug, "debug", lookupEnvOrBool("DEBUG", config.Debug), "Debug")
 
 		flag.Parse()
 	}
@@ -74,32 +82,4 @@ func InitConfig() (*Config, error) {
 	}
 
 	return config, nil
-}
-
-func lookupEnvOrString(key, defaultVal string) string {
-	if val, ok := os.LookupEnv(key); ok {
-		return val
-	}
-
-	return defaultVal
-}
-
-func lookupEnvOrInt(key string, defaultVal int) int {
-	if val, ok := os.LookupEnv(key); ok {
-		if x, err := strconv.Atoi(val); err == nil {
-			return x
-		}
-	}
-
-	return defaultVal
-}
-
-func lookupEnvOrBool(key string, defaultVal bool) bool {
-	if val, ok := os.LookupEnv(key); ok {
-		if x, err := strconv.ParseBool(val); err == nil {
-			return x
-		}
-	}
-
-	return defaultVal
 }

@@ -1,5 +1,5 @@
 {
-  "version": "0.3.4",
+  "version": "0.3.5",
   "name": "vk-callbackapi-to-telegram",
   "slug": "vk-callbackapi-to-telegram",
   "description": "",
@@ -33,7 +33,8 @@
     "TELEGRAM_ADMIN_ID": "-",
     "VK_CONFIRMATION": "",
     "VK_SECRET": "",
-    "LISTEN_PORT": 3333,
+    "LISTEN_HOST": "",
+    "LISTEN_PORT": "3333",
     "DEBUG": false
   },
   "schema": {
@@ -42,7 +43,8 @@
     "TELEGRAM_ADMIN_ID": "str",
     "VK_CONFIRMATION": "str",
     "VK_SECRET": "str",
-    "LISTEN_PORT": "int",
+    "LISTEN_HOST": "str",
+    "LISTEN_PORT": "str",
     "DEBUG": "bool"
   }
 }
