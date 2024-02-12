@@ -1,12 +1,10 @@
-FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:alpine as builder
+FROM --platform=${BUILDPLATFORM:-linux/amd64} danielapatin/homeassistant-addon-golang-template as builder
 
 ARG BUILD_VERSION
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
-
-RUN apk update && apk add --no-cache ca-certificates && update-ca-certificates
 
 WORKDIR $GOPATH/src/app
 COPY . .
@@ -19,7 +17,7 @@ WORKDIR /app/
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /etc/group /etc/group
-COPY --from=builder /config.json /config.json
+COPY config.json /config.json
 COPY --from=builder /go/bin/app /go/bin/app
 ENTRYPOINT ["/go/bin/app"]
 
