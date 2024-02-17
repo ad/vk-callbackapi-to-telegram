@@ -18,7 +18,8 @@ jobs:
           SHORTREF=${GITHUB_SHA::8}
           # If this is git tag, use the tag name as a docker tag
           if [[ $GITHUB_REF == refs/tags/* ]]; then
-            BUILD_VERSION=${GITHUB_REF#refs/tags/v}
+            echo "GIT_TAG=`echo $(git describe --tags --abbrev=0)`" >> $GITHUB_ENV
+            BUILD_VERSION=${GIT_TAG}
           fi
           TAGS="${DOCKER_IMAGE}:${BUILD_VERSION},${DOCKER_IMAGE}:${SHORTREF}"
           # If the BUILD_VERSION looks like a version number, assume that
