@@ -3,6 +3,9 @@ name: Dockerhub Image CI
 on:
   - workflow_dispatch
   - release
+  - push:
+      tags:
+        - '*'
 
 jobs:
 
