@@ -4,10 +4,7 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-# Enable C code, as it is needed for SQLite3 database binary
-# Enable go modules
 export CGO_ENABLED=0
-export GO111MODULE=on
 export GOFLAGS="-mod=vendor"
 
 # Collect test targets
