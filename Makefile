@@ -1,13 +1,10 @@
 .EXPORT_ALL_VARIABLES:
+.DEFAULT_GOAL := default
 DOCKER_SCAN_SUGGEST = false
 CWD = $(shell pwd)
 SRC_DIRS := .
 GOCACHE ?= $$(pwd)/.go/cache
-
 BUILD_VERSION=$(shell cat config.json | awk 'BEGIN { FS="\""; RS="," }; { if ($$2 == "version") {print $$4} }')
-
-.DEFAULT_GOAL := default
-
 IMAGE ?= danielapatin/vk-callbackapi-to-telegram:${BUILD_VERSION}
 
 export DOCKER_CLI_EXPERIMENTAL=enabled
