@@ -23,9 +23,7 @@ func (s *Sender) PrepareMessage(m *models.VkCallbackRequest) string {
 
 func (s *Sender) ProcessVKMessage(m *models.VkCallbackRequest) error {
 	if !checkIfTypeIsAllowed(m) {
-		if s.config.Debug {
-			fmt.Printf("Type %s is not allowed\n", m.Type)
-		}
+		s.lgr.Debug(fmt.Sprintf("Type %s is not allowed", m.Type))
 
 		return nil
 	}

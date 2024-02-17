@@ -3,6 +3,7 @@ package sender
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
 
 	conf "github.com/ad/vk-callbackapi-to-telegram/config"
@@ -12,6 +13,7 @@ import (
 
 type Sender struct {
 	sync.RWMutex
+	lgr              *slog.Logger
 	config           *conf.Config
 	Bot              *bot.Bot
 	Config           *conf.Config
@@ -19,8 +21,9 @@ type Sender struct {
 	lastMessageTimes map[int64]int64
 }
 
-func InitSender(config *conf.Config) (*Sender, error) {
+func InitSender(lgr *slog.Logger, config *conf.Config) (*Sender, error) {
 	sender := &Sender{
+		lgr:              lgr,
 		config:           config,
 		deferredMessages: make(map[int64]chan DeferredMessage),
 		lastMessageTimes: make(map[int64]int64),
@@ -51,7 +54,7 @@ func InitSender(config *conf.Config) (*Sender, error) {
 func (s *Sender) handler(ctx context.Context, b *bot.Bot, update *bm.Update) {
 	if s.config.Debug {
 		if update.Message != nil && update.Message.From != nil && update.Message.Chat.ID != 0 && update.Message.Text != "" {
-			fmt.Printf("%d -> %d: %s\n", update.Message.From.ID, update.Message.Chat.ID, update.Message.Text)
+			s.lgr.Debug(fmt.Sprintf("%d -> %d: %s", update.Message.From.ID, update.Message.Chat.ID, update.Message.Text))
 		}
 	}
 }

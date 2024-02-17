@@ -7,6 +7,7 @@ import (
 
 	conf "github.com/ad/vk-callbackapi-to-telegram/config"
 	lstnr "github.com/ad/vk-callbackapi-to-telegram/listener"
+	"github.com/ad/vk-callbackapi-to-telegram/logger"
 	sndr "github.com/ad/vk-callbackapi-to-telegram/sender"
 )
 
@@ -22,7 +23,9 @@ func Run(ctx context.Context, w io.Writer, args []string) error {
 
 	config = confLoad
 
-	sender, errInitSender := sndr.InitSender(config)
+	lgr := logger.InitLogger(config.Debug)
+
+	sender, errInitSender := sndr.InitSender(lgr, config)
 	if errInitSender != nil {
 		return errInitSender
 	}
@@ -35,7 +38,7 @@ func Run(ctx context.Context, w io.Writer, args []string) error {
 		}, sender.SendResult)
 	}
 
-	_, errInitListener := lstnr.InitListener(config, sender)
+	_, errInitListener := lstnr.InitListener(lgr, config, sender)
 	if errInitListener != nil {
 		return errInitListener
 	}

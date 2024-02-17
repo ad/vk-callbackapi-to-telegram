@@ -1,16 +1,14 @@
 package sender
 
-import (
-	"fmt"
-)
+import "fmt"
 
 func (sender *Sender) SendResult(s SendResult) error {
 	if s.Error != nil {
-		fmt.Printf("message id %d sent to %d error %q: %s\n", s.MessageID, s.ChatID, s.Error, s.Msg)
+		sender.lgr.Error(fmt.Sprintf("message id %d sent to %d error %q: %s", s.MessageID, s.ChatID, s.Error, s.Msg))
 		return s.Error
 	}
 
-	fmt.Printf("message id %d sent to %d: %s\n", s.MessageID, s.ChatID, s.Msg)
+	sender.lgr.Info(fmt.Sprintf("message id %d sent to %d: %s", s.MessageID, s.ChatID, s.Msg))
 
 	return nil
 }
