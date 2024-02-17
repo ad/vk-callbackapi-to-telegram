@@ -19,7 +19,9 @@ jobs:
         run: |
           DOCKER_IMAGE=${{ secrets.DOCKER_USER }}/vk-callbackapi-to-telegram
           SHORTREF=${GITHUB_SHA::8}
-          BUILD_VERSION=$(cat config.json | awk 'BEGIN { FS="\""; RS="," }; { if ($$2 == "version") {print $$4} }')
+          echo "CONFIG_JSON=$(jq -c . < config.json)" >> $GITHUB_ENV
+          echo '${{ fromJson(env.CONFIG_JSON).version }}'
+          BUILD_VERSION=${{ fromJson(env.CONFIG_JSON).version }}
           echo "BUILD_VERSION=${BUILD_VERSION}" >> $GITHUB_ENV
           TAGS="${DOCKER_IMAGE}:${BUILD_VERSION},${DOCKER_IMAGE}:${SHORTREF},${DOCKER_IMAGE}:latest"
 
