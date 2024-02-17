@@ -14,14 +14,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - id: set_var
+        run: |
+          content=`cat ./config.json`
+          # the following lines are only required for multi line json
+          content="${content//'%'/'%25'}"
+          content="${content//$'\n'/'%0A'}"
+          content="${content//$'\r'/'%0D'}"
+          echo "::set-output name=packageJson::$content"
       - name: Prepare
         id: prep
         run: |
           DOCKER_IMAGE=${{ secrets.DOCKER_USER }}/vk-callbackapi-to-telegram
           SHORTREF=${GITHUB_SHA::8}
-          echo "CONFIG_JSON=$(jq -c . < config.json)" >> $GITHUB_ENV
-          echo '${{ fromJson(env.CONFIG_JSON).version }}'
-          BUILD_VERSION=${{ fromJson(env.CONFIG_JSON).version }}
+          echo '${{fromJson(steps.set_var.outputs.packageJson).version}}'
+          BUILD_VERSION=${{fromJson(steps.set_var.outputs.packageJson).version}}
           echo "BUILD_VERSION=${BUILD_VERSION}" >> $GITHUB_ENV
           TAGS="${DOCKER_IMAGE}:${BUILD_VERSION},${DOCKER_IMAGE}:${SHORTREF},${DOCKER_IMAGE}:latest"
 
