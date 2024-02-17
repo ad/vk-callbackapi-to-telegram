@@ -17,7 +17,7 @@ jobs:
         run: |
           DOCKER_IMAGE=${{ secrets.DOCKER_USER }}/vk-callbackapi-to-telegram
           SHORTREF=${GITHUB_SHA::8}
-          echo "GIT_TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
+          echo "GIT_TAG=$(shell cat config.json | awk 'BEGIN { FS=\"\\\"\"; RS=\",\" }; { if ($$2 == \"version\") {print $$4} }')" >> $GITHUB_ENV
           echo "BUILD_VERSION=$(GIT_TAG)" >> $GITHUB_ENV
           BUILD_VERSION=${GIT_TAG}
           TAGS="${DOCKER_IMAGE}:${BUILD_VERSION},${DOCKER_IMAGE}:${SHORTREF},${DOCKER_IMAGE}:latest"
