@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.1.3 (2024-02-22)
+
+- fix json tag for DeleteMessagesParams.MessageIDs
+
+## v1.1.2 (2024-02-21)
+
+- fix SetMessageReaction marshal func, fix get response for this method
+
+## v1.1.1 (2024-02-21)
+
+- fix typo in json tag `models.UsersShared` for field UserIDs 
+
 ## v1.1.0 (2024-02-19)
 
 - support API v7.1
