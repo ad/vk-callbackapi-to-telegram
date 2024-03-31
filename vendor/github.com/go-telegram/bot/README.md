@@ -6,7 +6,7 @@
 
 > [Telegram Group](https://t.me/gotelegrambotui)
 
-> Supports Bot API version: [7.0](https://core.telegram.org/bots/api#december-29-2023) from December 29, 2023
+> Supports Bot API version: [7.1](https://core.telegram.org/bots/api#february-16-2024) from February 16, 2024
 
 It's a Go zero-dependencies telegram bot framework
 
@@ -179,6 +179,7 @@ b, err := bot.New("YOUR_BOT_TOKEN_FROM_BOTFATHER", opts...)
 - `WithHTTPClient(pollTimeout time.Duration, client HttpClient)` - set custom http client
 - `WithServerURL(serverURL string)` - set server url
 - `WithSkipGetMe()` - skip call GetMe on bot init
+- `WithAllowedUpdates(params AllowedUpdates)` - set [allowed_updates](https://core.telegram.org/bots/api#getupdates) for getUpdates method
 
 ## Message.Text and CallbackQuery.Data handlers
 
@@ -337,9 +338,22 @@ b.SendPool(ctx, p)
 
 ### `FileDownloadLink(f *models.File) string`
 
-Returns file download link after call method `GetFile`
+Return file download link after call method `GetFile`
 
 See [documentation(https://core.telegram.org/bots/api#getfile)
+
+## Errors
+
+The library provides error `ErrorForbidden` for error code 403. That code returns when the bot has no access to the action.
+For example, when the user blocked the bot.
+
+```go
+_, err := b.SendMessage(...)
+
+if errors.Is(err, bot.ErrorForbidden) {
+    // your code
+}
+```
 
 ## UI Components
 

@@ -1,5 +1,39 @@
 # Changelog
 
+## v1.1.7 (2024-03-11)
+
+- add error `ErrorForbidden` for responses with error code 403
+- fix CopyMessages capture response Negasus A minute ago
+- ForwardMessages properly unmarshal result (#68) 
+
+## v1.1.6 (2024-03-05)
+
+- ForwardMessages return slice of MessageID (#66)
+
+## v1.1.5 (2024-03-04)
+
+- add option WithAllowedUpdates (#65)
+
+## v1.1.4 (2024-02-27)
+
+- fix `CallbackQuery.Message` field type from `InaccessibleMessage` to `MaybeInaccessibleMessage`
+
+## v1.1.3 (2024-02-22)
+
+- fix json tag for DeleteMessagesParams.MessageIDs
+
+## v1.1.2 (2024-02-21)
+
+- fix SetMessageReaction marshal func, fix get response for this method
+
+## v1.1.1 (2024-02-21)
+
+- fix typo in json tag `models.UsersShared` for field UserIDs 
+
+## v1.1.0 (2024-02-19)
+
+- support API v7.1
+
 ## v1.0.1 (2024-01-15)
 
 - fix: add 'omitempty' to LinkPreviewOptions.URL

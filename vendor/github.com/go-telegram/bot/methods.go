@@ -63,9 +63,9 @@ func (b *Bot) ForwardMessage(ctx context.Context, params *ForwardMessageParams) 
 }
 
 // ForwardMessages https://core.telegram.org/bots/api#forwardmessages
-func (b *Bot) ForwardMessages(ctx context.Context, params *ForwardMessagesParams) ([]models.Message, error) {
-	var result []models.Message
-	err := b.rawRequest(ctx, "forwardMessages", params, result)
+func (b *Bot) ForwardMessages(ctx context.Context, params *ForwardMessagesParams) ([]models.MessageID, error) {
+	var result []models.MessageID
+	err := b.rawRequest(ctx, "forwardMessages", params, &result)
 	return result, err
 }
 
@@ -79,7 +79,7 @@ func (b *Bot) CopyMessage(ctx context.Context, params *CopyMessageParams) (*mode
 // CopyMessages https://core.telegram.org/bots/api#copymessages
 func (b *Bot) CopyMessages(ctx context.Context, params *CopyMessagesParams) ([]models.MessageID, error) {
 	var result []models.MessageID
-	err := b.rawRequest(ctx, "copyMessages", params, result)
+	err := b.rawRequest(ctx, "copyMessages", params, &result)
 	return result, err
 }
 
@@ -198,7 +198,7 @@ func (b *Bot) SendChatAction(ctx context.Context, params *SendChatActionParams) 
 // SetMessageReaction https://core.telegram.org/bots/api#setmessagereaction
 func (b *Bot) SetMessageReaction(ctx context.Context, params *SetMessageReactionParams) (bool, error) {
 	var result bool
-	err := b.rawRequest(ctx, "setMessageReaction", params, result)
+	err := b.rawRequest(ctx, "setMessageReaction", params, &result)
 	return result, err
 }
 
