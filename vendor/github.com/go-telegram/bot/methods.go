@@ -811,6 +811,13 @@ func (b *Bot) AnswerPreCheckoutQuery(ctx context.Context, params *AnswerPreCheck
 	return result, err
 }
 
+// GetStarTransactions https://core.telegram.org/bots/api#getstartransactions
+func (b *Bot) GetStarTransactions(ctx context.Context, params *GetStarTransactionsParams) (*models.StarTransactions, error) {
+	result := models.StarTransactions{}
+	err := b.rawRequest(ctx, "getStarTransactions", params, &result)
+	return &result, err
+}
+
 // RefundStarPayment https://core.telegram.org/bots/api#refundstarpayment
 func (b *Bot) RefundStarPayment(ctx context.Context, params *RefundStarPaymentParams) (bool, error) {
 	var result bool
@@ -840,8 +847,8 @@ func (b *Bot) SetGameScore(ctx context.Context, params *SetGameScoreParams) (*mo
 }
 
 // GetGameHighScores https://core.telegram.org/bots/api#getgamehighscores
-func (b *Bot) GetGameHighScores(ctx context.Context, params *GetGameHighScoresParams) (*models.GameHighScore, error) {
-	result := &models.GameHighScore{}
-	err := b.rawRequest(ctx, "getGameHighScores", params, result)
+func (b *Bot) GetGameHighScores(ctx context.Context, params *GetGameHighScoresParams) ([]*models.GameHighScore, error) {
+	var result []*models.GameHighScore
+	err := b.rawRequest(ctx, "getGameHighScores", params, &result)
 	return result, err
 }
