@@ -28,6 +28,9 @@ publish:
 		--tag $(IMAGE) \
 		.
 
+run:
+	@docker run --rm -it -p 8080:8080 $(IMAGE)
+
 lint:
 	@docker run --rm -t -w $(CWD) -v $(CURDIR):$(CWD) -e GOFLAGS=-mod=vendor golangci/golangci-lint:latest golangci-lint run -v
 
