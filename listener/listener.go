@@ -78,7 +78,7 @@ func (l *Listener) handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	l.lgr.Debug(fmt.Sprintf("%s: %s", result.Type, string(bodyValue)))
+	// l.lgr.Debug(fmt.Sprintf("%s: %s", result.Type, string(bodyValue)))
 
 	if l.config.VkSecret != "" && result.Secret != l.config.VkSecret {
 		l.lgr.Debug(fmt.Sprintf("secret mistmatch %s != %s", l.config.VkSecret, result.Secret))

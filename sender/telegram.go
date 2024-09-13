@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"strconv"
 	"sync"
+	"time"
 
 	conf "github.com/ad/vk-callbackapi-to-telegram/config"
 	"github.com/go-telegram/bot"
@@ -20,6 +21,7 @@ type Sender struct {
 	Config           *conf.Config
 	deferredMessages map[int64]chan DeferredMessage
 	lastMessageTimes map[int64]int64
+	messageCache     map[int]time.Time
 }
 
 func InitSender(lgr *slog.Logger, config *conf.Config) (*Sender, error) {
@@ -55,7 +57,7 @@ func InitSender(lgr *slog.Logger, config *conf.Config) (*Sender, error) {
 func (s *Sender) handler(ctx context.Context, b *bot.Bot, update *bm.Update) {
 	if s.config.Debug {
 		if update.Message != nil && update.Message.From != nil && update.Message.Chat.ID != 0 && update.Message.Text != "" {
-			s.lgr.Debug(fmt.Sprintf("%s -> %d: %s", getMessageFromUsername(update), update.Message.Chat.ID, update.Message.Text))
+			s.lgr.Debug(fmt.Sprintf("%s: %s", getMessageFromUsername(update), update.Message.Text))
 		}
 	}
 }
