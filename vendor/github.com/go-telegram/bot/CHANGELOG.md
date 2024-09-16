@@ -1,5 +1,27 @@
 # Changelog
 
+## v1.8.1 (2024-09-16)
+
+- change handlers map to slice (#115) 
+- feat: Ability to process updates across multiple gorutines (#112)
+- add 'HandlerTypeCallbackQueryGameShortName' (#108)
+- feat: add middlewares for handler (#105)
+
+## v1.8.0 (2024-09-13)
+
+- support API v7.10
+- change type for field Type in models.Chat and models.ChatFullInfo from `string` to `models.ChatType`
+- add consts for ChatType
+  - models.ChatTypePrivate
+  - models.ChatTypeGroup
+  - models.ChatTypeSupergroup
+  - models.ChatTypeChannel
+
+
+## v1.7.3 (2024-09-10)
+
+- Fix findHandler behavior
+
 ## v1.7.2 (2024-08-23)
 
 - fix: pass error with `%w` instead `%v` after rawRequest
