@@ -30,6 +30,7 @@ func InitSender(lgr *slog.Logger, config *conf.Config) (*Sender, error) {
 		config:           config,
 		deferredMessages: make(map[int64]chan DeferredMessage),
 		lastMessageTimes: make(map[int64]int64),
+		messageCache:     make(map[int]time.Time),
 	}
 
 	opts := []bot.Option{
