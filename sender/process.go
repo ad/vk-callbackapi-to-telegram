@@ -27,11 +27,11 @@ func (s *Sender) ProcessVKMessage(m *models.VkCallbackRequest) error {
 		return nil
 	}
 
-	// Check if the message is a duplicate
-	if s.isDuplicateMessage(m) {
-		// s.lgr.Debug("Duplicate message received")
-		return nil
-	}
+	// // Check if the message is a duplicate
+	// if s.isDuplicateMessage(m) {
+	// 	// s.lgr.Debug("Duplicate message received")
+	// 	return nil
+	// }
 
 	message := s.PrepareMessage(m)
 
@@ -69,5 +69,5 @@ func (s *Sender) isDuplicateMessage(m *models.VkCallbackRequest) bool {
 }
 
 func checkIfTypeIsAllowed(m *models.VkCallbackRequest) bool {
-	return m.Type == "message_new" || m.Type == "wall_reply_new" || m.Type == "photo_comment_new" || m.Type == "video_comment_new"
+	return m.Type == "message_new" || m.Type == "wall_reply_new" || m.Type == "video_comment_new" // || m.Type == "photo_comment_new"
 }
