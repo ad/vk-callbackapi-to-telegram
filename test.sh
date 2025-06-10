@@ -17,7 +17,7 @@ echo
 
 # Collect all `.go` files and `gofmt` against them. If some need formatting - print them.
 echo -n "Checking gofmt: "
-ERRS=$(find "$@" -type f -name \*.go | xargs gofmt -l 2>&1 || true)
+ERRS=$(find "$@" -type f -name \*.go ! -path "./vendor/*" | xargs gofmt -l 2>&1 || true)
 if [ -n "${ERRS}" ]; then
     echo "FAIL - the following files need to be gofmt'ed:"
     for e in ${ERRS}; do
