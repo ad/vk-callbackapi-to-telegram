@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"reflect"
 	"strings"
 )
@@ -24,28 +26,31 @@ type apiResponse struct {
 }
 
 func (b *Bot) rawRequest(ctx context.Context, method string, params any, dest any) error {
-	var httpBody io.Reader = http.NoBody
-	var contentType string
+	pr, pw := io.Pipe()
+	form := multipart.NewWriter(pw)
 
-	if params != nil && !reflect.ValueOf(params).IsNil() {
-		buf := bytes.NewBuffer(nil)
-		form := multipart.NewWriter(buf)
+	go func() {
+		if params != nil && !reflect.ValueOf(params).IsNil() {
+			_, errFormData := buildRequestForm(form, params)
+			if errFormData != nil {
+				if errClose := pw.CloseWithError(fmt.Errorf("error build request form for method %s, %w", method, errFormData)); errClose != nil {
+					b.errorsHandler(fmt.Errorf("error close pipe writer for method %s, %w", method, errClose))
+				}
+				return
+			}
 
-		fieldsCount, errFormData := buildRequestForm(form, params)
-		if errFormData != nil {
-			return fmt.Errorf("error build request form for method %s, %w", method, errFormData)
+			errFormClose := form.Close()
+			if errFormClose != nil {
+				if errClose := pw.CloseWithError(fmt.Errorf("error form close for method %s, %w", method, errFormClose)); errClose != nil {
+					b.errorsHandler(fmt.Errorf("error close pipe writer for method %s, %w", method, errClose))
+				}
+				return
+			}
 		}
-
-		errFormClose := form.Close()
-		if errFormClose != nil {
-			return fmt.Errorf("error form close for method %s, %w", method, errFormClose)
+		if errClose := pw.Close(); errClose != nil {
+			b.errorsHandler(fmt.Errorf("error close pipe writer for method %s, %w", method, errClose))
 		}
-
-		if fieldsCount > 0 {
-			httpBody = buf
-			contentType = form.FormDataContentType()
-		}
-	}
+	}()
 
 	u := b.url + "/bot" + b.token + "/"
 	if b.testEnvironment {
@@ -55,20 +60,26 @@ func (b *Bot) rawRequest(ctx context.Context, method string, params any, dest an
 
 	if b.isDebug && strings.ToLower(method) != "getupdates" {
 		requestDebugData, _ := json.Marshal(params)
-		b.debugHandler("request url: %s, payload: %s", u, requestDebugData)
+		b.debugHandler("request url: %s, payload: %s", strings.Replace(u, b.token, "***", 1), requestDebugData)
 	}
 
-	req, errRequest := http.NewRequestWithContext(ctx, http.MethodPost, u, httpBody)
+	req, errRequest := http.NewRequestWithContext(ctx, http.MethodPost, u, pr)
 	if errRequest != nil {
 		return fmt.Errorf("error create request for method %s, %w", method, errRequest)
 	}
 
-	if contentType != "" {
-		req.Header.Add("Content-Type", contentType)
-	}
+	req.Header.Add("Content-Type", form.FormDataContentType())
 
 	resp, errDo := b.client.Do(req)
 	if errDo != nil {
+		if errClose := pr.CloseWithError(errDo); errClose != nil {
+			b.errorsHandler(fmt.Errorf("error close pipe reader for method %s, %w", method, errClose))
+		}
+		var netErr *url.Error
+		if errors.As(errDo, &netErr) {
+			netErr.URL = strings.Replace(netErr.URL, b.token, "***", -1)
+		}
+
 		return fmt.Errorf("error do request for method %s, %w", method, errDo)
 	}
 	defer func() {
@@ -91,9 +102,9 @@ func (b *Bot) rawRequest(ctx context.Context, method string, params any, dest an
 
 	if !r.OK {
 		switch r.ErrorCode {
-		case 403:
+		case http.StatusForbidden:
 			return fmt.Errorf("%w, %s", ErrorForbidden, r.Description)
-		case 400:
+		case http.StatusBadRequest:
 			if r.Parameters.MigrateToChatID != 0 {
 				err := &MigrateError{
 					Message:         fmt.Sprintf("%s: %s", ErrorBadRequest, r.Description),
@@ -103,13 +114,13 @@ func (b *Bot) rawRequest(ctx context.Context, method string, params any, dest an
 				return err
 			}
 			return fmt.Errorf("%w, %s", ErrorBadRequest, r.Description)
-		case 401:
+		case http.StatusUnauthorized:
 			return fmt.Errorf("%w, %s", ErrorUnauthorized, r.Description)
-		case 404:
+		case http.StatusNotFound:
 			return fmt.Errorf("%w, %s", ErrorNotFound, r.Description)
-		case 409:
+		case http.StatusConflict:
 			return fmt.Errorf("%w, %s", ErrorConflict, r.Description)
-		case 429:
+		case http.StatusTooManyRequests:
 			err := &TooManyRequestsError{
 				Message:    fmt.Sprintf("%s, %s", ErrorTooManyRequests, r.Description),
 				RetryAfter: r.Parameters.RetryAfter,
@@ -122,7 +133,7 @@ func (b *Bot) rawRequest(ctx context.Context, method string, params any, dest an
 
 	if !bytes.Equal(r.Result, []byte("[]")) {
 		if b.isDebug {
-			b.debugHandler("response from '%s' with payload '%s'", u, body)
+			b.debugHandler("response from '%s' with payload '%s'", strings.Replace(u, b.token, "***", 1), body)
 		}
 	}
 
