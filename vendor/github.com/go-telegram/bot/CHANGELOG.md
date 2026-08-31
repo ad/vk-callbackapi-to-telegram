@@ -1,5 +1,88 @@
 # Changelog
 
+## v1.24.0 (2026-08-26)
+
+- Support Bot API 10.3 (August 24, 2026 update):
+  - Rich Messages: new `RichMessageButton`; `RichTextButton` (via the `RichText`
+    union); `RichBlockButtons`, `RichBlockExpandableBlockQuotation`,
+    `RichBlockDocument` and their `InputRichBlock*` counterparts (via the
+    `RichBlock` / `InputRichBlock` unions); `is_compact` on `RichBlockTable` and
+    `InputRichBlockTable`; `tg://document?id=` links for `InputRichMessageMedia`.
+  - Ephemeral Messages: new `EphemeralMessageParameters` (with
+    `replace_callback_query_message`), sent as `ephemeral_message_parameters` by
+    the 13 send methods and `sendRichMessage`; `rich_message` on
+    `editEphemeralMessageText` (and `text` made optional);
+    `show_caption_above_media` on `editEphemeralMessageCaption`; upload of new
+    files in `editEphemeralMessageMedia`; `can_send_welcome_messages` on
+    `ChatAdministratorRights`, `ChatMemberAdministrator` and `promoteChatMember`.
+  - Reply markup: new `DisabledButton` with the `disabled` field on
+    `InlineKeyboardButton`; `force_reply` on `InlineKeyboardMarkup` and
+    `ReplyKeyboardMarkup`.
+  - General: `can_stop` and `keep_on_stop` on `sendMessageDraft` and
+    `sendRichMessageDraft`; new `MessageGenerationStopped` with the
+    `stopped_message_generation` field on `Update` (and the matching
+    allowed-update constant); new `CommunityChatJoined` with
+    `community_chat_joined` on `Message`; `text`, `entities` and `is_private` on
+    `UniqueGiftInfo`.
+- Fix: `attach://` with a nil reader returns an error instead of panicking.
+  `addFormFieldInputMediaItem` and `addFormFieldInputStickerSlice` copied the
+  reader without checking it, and since the form is built in a goroutine with no
+  recover, a missing `MediaAttachment` or `StickerAttachment` took the process
+  down instead of failing the call (#296).
+- Fix: `can_post_stories`, `can_edit_stories` and `can_delete_stories` are no
+  longer marked `omitempty` on `ChatAdministratorRights` and
+  `ChatMemberAdministrator`. They are required fields in the Bot API, so they
+  are now always sent, matching the rest of the required rights in those types.
+  The parameters of the same name on `promoteChatMember` are optional and are
+  unchanged.
+- Fix: the `getUpdates` loop honours `retry_after` on a 429 instead of its own
+  backoff, which starts at 100ms, doubles and caps at 5s. When Telegram asked
+  for a longer wait, the bot retried early and earned further 429s (#289).
+- [BREAKING] Fix: `Message.ReplyToStore` was tagged `reply_to_store`, a typo of
+  the Bot API field `reply_to_story`, so it was never unmarshalled. The field is
+  renamed to `ReplyToStory` (#287).
+- [BREAKING] Fix: `BusinessBotRights.CanDeleteOutgoingMessages` was tagged
+  `can_delete_outgoing_messages`, which does not exist in the Bot API. The right
+  was dropped on unmarshal and emitted under a key Telegram ignores. The field is
+  renamed to `CanDeleteSentMessages` with the correct
+  `can_delete_sent_messages` tag (#286).
+- [BREAKING] `ReceiverUserID` and `CallbackQueryID` are removed from the send
+  method params (`SendMessageParams`, `SendPhotoParams`, ...); Bot API 10.3
+  replaced them with `EphemeralMessageParameters`.
+
+## v1.23.0 (2026-08-03)
+
+- Support Bot API 10.2 (July 14, 2026 update):
+  - Rich Messages: new `InputRichMessageMedia`, `InputMediaVoiceNote`, the 21
+    `InputRichBlock*` block types (via the `InputRichBlock` tagged union) and
+    `InputRichBlockListItem`; added `blocks` and `media` fields to
+    `InputRichMessage`.
+  - Ephemeral Messages: new methods `editEphemeralMessageText`,
+    `editEphemeralMessageMedia`, `editEphemeralMessageCaption`,
+    `editEphemeralMessageReplyMarkup`, `deleteEphemeralMessage`; added
+    `receiver_user_id` and `callback_query_id` params to the 13 send methods;
+    `is_ephemeral` on `BotCommand`; `receiver_user` and `ephemeral_message_id`
+    on `Message`; `ephemeral_message_id` on `ReplyParameters` (and `message_id`
+    made optional).
+  - Communities: new `Community`, `CommunityChatAdded`, `CommunityChatRemoved`;
+    `community_chat_added` / `community_chat_removed` on `Message`; `community`
+    on `ChatFullInfo`.
+  - General: new `BotSubscriptionUpdated` with the `subscription` field on
+    `Update` (and `subscription` allowed-update constant).
+- Fix: `InputMedia` values now implement `json.Marshaler`, so the required `type`
+  discriminator is kept when they are encoded through a plain `json.Marshal`
+  (e.g. nested inside a rich message). Previously `type` was only emitted by
+  `MarshalInputMedia`, which nested values never reached.
+- Fix: `MarshalJSON` on the `InputRichBlock`, `RichBlock` and `RichText` tagged
+  unions returns an error instead of panicking when `Type` is set without its
+  matching variant pointer, and reports an unknown `Type` as unsupported rather
+  than as a missing variant.
+- Fix: marshaling those unions no longer writes the discriminator back into the
+  caller's variant. The `type` field is stamped on a copy, so encoding has no
+  side effects and the same value can be encoded from several goroutines.
+- Fix: `EditMessageCaptionParams.ShowCaptionAboveMedia` was sent under the field
+  name `k` instead of `show_caption_above_media`, so it never took effect.
+
 ## v1.22.0 (2026-06-30)
 
 - Support Bot API 10.1 (June 11, 2026 update) — Rich Messages:
