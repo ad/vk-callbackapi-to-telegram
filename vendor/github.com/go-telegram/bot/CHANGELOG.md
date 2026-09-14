@@ -1,5 +1,72 @@
 # Changelog
 
+## v1.27.0 (2026-09-11)
+
+- Fix: a request can be retried by HTTP/2 after the server sends GOAWAY. `rawRequest`
+  streamed the multipart body through an `io.Pipe`, which `net/http` cannot replay,
+  so `Request.GetBody` was never set and `http2.Transport` failed every POST in
+  flight on a draining connection with `cannot retry err ... after Request.Body was
+  written`. Telegram drains connections routinely, and a bot on such a connection
+  kept receiving updates while every `sendMessage` / `editMessageText` /
+  `answerCallbackQuery` failed until the connection was dropped. The body is now
+  built into a buffer up front and handed over as a `*bytes.Reader`, so `net/http`
+  sets `ContentLength` and `GetBody` and the transport retries transparently. The
+  trade-off is that an upload is held in memory for the duration of the request
+  instead of being streamed (#275).
+- Fix: a method without fields (`getMe`, `logOut`, `close`, or a params struct whose
+  fields are all omitted) is sent without a body and without a multipart
+  `Content-Type`. The pipe-based request always declared a multipart body, empty or
+  not, which local `telegram-bot-api --local` servers reject with a bare `400`, so
+  `bot.New` against a local server failed with `unexpected end of JSON input`
+  (#285, #224).
+- Fix: `buildRequestForm` counts custom-marshaled fields (`BotCommandScope`,
+  `InlineQueryResult`) and `InputMedia` fields. They were written to the form but
+  not counted, so a request consisting only of such a field would have been sent
+  as empty.
+
+## v1.26.0 (2026-09-11)
+
+- Fix: an unknown polymorphic discriminator no longer stalls long polling. Fourteen
+  models (`ChatMember`, `ReactionType`, `ChatBoostSource`, `OwnedGift`, `MenuButton`,
+  `MessageOrigin`, `StoryAreaType`, `TransactionPartner`, `RevenueWithdrawalState`,
+  `BackgroundType`, `BackgroundFill`, `RichBlock`, `RichText`, `PaidMedia`) returned
+  `unsupported <Type> type` from `UnmarshalJSON` when the `type` / `status` / `source`
+  value was not in their switch. `getUpdates` decoded the whole batch with one
+  `json.Unmarshal`, so a single update carrying a value added by a Bot API release
+  failed the entire call, the offset never advanced, and the same batch was requested
+  and rejected forever. The wrapper now keeps the raw value in `Type` (`Source` for
+  `ChatBoostSource`), leaves every variant pointer nil and returns no error, so a
+  consumer switching on `Type` reaches its default branch instead of never seeing the
+  update. The webhook path gets the same tolerance through the models.
+- Fix: the nine unions with a `MarshalJSON` (`ChatMember`, `ReactionType`,
+  `ChatBoostSource`, `MenuButton`, `MessageOrigin`, `BackgroundType`, `BackgroundFill`,
+  `RichBlock`, `RichText`) encode an unknown discriminator as the bare
+  `{"type":"<Type>"}` (`status` / `source` where applicable) instead of returning
+  `unsupported <Type> type`, so an update that is logged, persisted or queued as JSON
+  still encodes on the day Telegram ships a new variant. Only the discriminator
+  survives: no variant was populated, so the other fields of the unknown object are
+  not kept and are not written back. The remaining five unions have no custom encoder
+  and are unchanged.
+- Fix: a tagged object without a discriminator (`{}`, or a `ChatMember` without
+  `status`) is rejected by `UnmarshalJSON` in all fourteen unions. It is a malformed
+  value rather than a variant from a future release, and `MarshalJSON` rejects an
+  empty `Type` on the way back out, so accepting it would produce values that decode
+  but cannot be encoded again. For `RichText` an empty `Type` is also its plain-string
+  form, so `{"text":"hi"}` would otherwise have decoded to an empty string.
+- Fix: `ReactionType.MarshalJSON` handles `paid`. The variant has been decodable since
+  Bot API 7.6 but had no marshal case, so a paid reaction read from an update could not
+  be encoded back, e.g. into `setMessageReaction`. All three `ReactionType` variants now
+  go through the shared `marshalVariant`, so a `Type` set without its variant pointer
+  returns an error instead of panicking inside `encoding/json`.
+- Fix: `getUpdates` decodes each update on its own. An update that still fails to
+  decode is reported through the errors handler with its `update_id` and its raw
+  payload, the offset moves past it, and the rest of the batch is delivered. When the
+  last update of a batch has no readable `update_id` (an unparsable id, a `null`
+  element, an object without the field) the offset cannot move and the same batch comes
+  back, so the poll backs off (100ms..5s, one step per request) as it does on a failed
+  request, instead of re-requesting it in a tight loop. Such an element is reported
+  and never delivered, and no longer resets the offset to zero.
+
 ## v1.25.0 (2026-09-01)
 
 - Fix: attachments nested in a rich message are uploaded. `buildRequestForm` had
@@ -114,7 +181,8 @@
 - Fix: `MarshalJSON` on the `InputRichBlock`, `RichBlock` and `RichText` tagged
   unions returns an error instead of panicking when `Type` is set without its
   matching variant pointer, and reports an unknown `Type` as unsupported rather
-  than as a missing variant.
+  than as a missing variant. (Since v1.26.0 an unknown `Type` is not an error on
+  either side.)
 - Fix: marshaling those unions no longer writes the discriminator back into the
   caller's variant. The `type` field is stamped on a copy, so encoding has no
   side effects and the same value can be encoded from several goroutines.
