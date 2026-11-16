@@ -2,7 +2,6 @@ package models
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 )
 
@@ -62,12 +61,12 @@ func (i InputStoryContentVideo) MarshalInputMedia() ([]byte, error) {
 
 // StoryArea https://core.telegram.org/bots/api#storyarea
 type StoryArea struct {
-	Position StoryAreaPosition `json:"position"`
-	Type     StoryAreaType     `json:"type"`
+	Position AreaPosition  `json:"position"`
+	Type     StoryAreaType `json:"type"`
 }
 
-// StoryAreaPosition https://core.telegram.org/bots/api#storyareaposition
-type StoryAreaPosition struct {
+// AreaPosition https://core.telegram.org/bots/api#areaposition
+type AreaPosition struct {
 	XPercentage            float64 `json:"x_percentage"`
 	YPercentage            float64 `json:"y_percentage"`
 	WidthPercentage        float64 `json:"width_percentage"`
@@ -75,6 +74,9 @@ type StoryAreaPosition struct {
 	RotationAngle          float64 `json:"rotation_angle"`
 	CornerRadiusPercentage float64 `json:"corner_radius_percentage"`
 }
+
+// StoryAreaPosition is AreaPosition, the name this type had before Bot API 10.4.
+type StoryAreaPosition = AreaPosition
 
 // LocationAddress https://core.telegram.org/bots/api#locationaddress
 type LocationAddress struct {
@@ -112,40 +114,41 @@ func (s *StoryAreaType) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &v); err != nil {
 		return err
 	}
+	if v.Type == "" {
+		return missingDiscriminator("StoryAreaType")
+	}
+
+	s.Type = v.Type
+
 	switch v.Type {
 	case StoryAreaTypeTypeLocation:
-		s.Type = StoryAreaTypeTypeLocation
 		s.StoryAreaTypeLocation = &StoryAreaTypeLocation{
 			Type: StoryAreaTypeTypeLocation,
 		}
 		return json.Unmarshal(data, s.StoryAreaTypeLocation)
 	case StoryAreaTypeTypeSuggestedReaction:
-		s.Type = StoryAreaTypeTypeSuggestedReaction
 		s.StoryAreaTypeSuggestedReaction = &StoryAreaTypeSuggestedReaction{
 			Type: StoryAreaTypeTypeSuggestedReaction,
 		}
 		return json.Unmarshal(data, s.StoryAreaTypeSuggestedReaction)
 	case StoryAreaTypeTypeLink:
-		s.Type = StoryAreaTypeTypeLink
 		s.StoryAreaTypeLink = &StoryAreaTypeLink{
 			Type: StoryAreaTypeTypeLink,
 		}
 		return json.Unmarshal(data, s.StoryAreaTypeLink)
 	case StoryAreaTypeTypeWeather:
-		s.Type = StoryAreaTypeTypeWeather
 		s.StoryAreaTypeWeather = &StoryAreaTypeWeather{
 			Type: StoryAreaTypeTypeWeather,
 		}
 		return json.Unmarshal(data, s.StoryAreaTypeWeather)
 	case StoryAreaTypeTypeUniqueGift:
-		s.Type = StoryAreaTypeTypeUniqueGift
 		s.StoryAreaTypeUniqueGift = &StoryAreaTypeUniqueGift{
 			Type: StoryAreaTypeTypeUniqueGift,
 		}
 		return json.Unmarshal(data, s.StoryAreaTypeUniqueGift)
 	}
 
-	return fmt.Errorf("unsupported StoryAreaType type")
+	return nil
 }
 
 // StoryAreaTypeLocation https://core.telegram.org/bots/api#storyareatypelocation

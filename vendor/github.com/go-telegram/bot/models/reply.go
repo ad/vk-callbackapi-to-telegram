@@ -2,15 +2,15 @@ package models
 
 import (
 	"encoding/json"
-	"fmt"
 )
 
 // TextQuote https://core.telegram.org/bots/api#textquote
 type TextQuote struct {
-	Text     string          `json:"text"`
-	Entities []MessageEntity `json:"entities,omitempty"`
-	Position int             `json:"position"`
-	IsManual bool            `json:"is_manual,omitempty"`
+	Text      string          `json:"text"`
+	Entities  []MessageEntity `json:"entities,omitempty"`
+	RichTexts []RichText      `json:"rich_texts,omitempty"`
+	Position  int             `json:"position"`
+	IsManual  bool            `json:"is_manual,omitempty"`
 }
 
 // ExternalReplyInfo https://core.telegram.org/bots/api#externalreplyinfo
@@ -29,6 +29,7 @@ type ExternalReplyInfo struct {
 	Video              *Video              `json:"video,omitempty"`
 	VideoNote          *VideoNote          `json:"video_note,omitempty"`
 	Voice              *Voice              `json:"voice,omitempty"`
+	Widget             *Widget             `json:"widget,omitempty"`
 	HasMediaSpoiler    bool                `json:"has_media_spoiler,omitempty"`
 	Checklist          *Checklist          `json:"checklist,omitempty"`
 	Contact            *Contact            `json:"contact,omitempty"`
@@ -52,6 +53,7 @@ type ReplyParameters struct {
 	Quote                    string          `json:"quote,omitempty"`
 	QuoteParseMode           ParseMode       `json:"quote_parse_mode,omitempty"`
 	QuoteEntities            []MessageEntity `json:"quote_entities,omitempty"`
+	QuoteRichTexts           []RichText      `json:"quote_rich_texts,omitempty"`
 	QuotePosition            int             `json:"quote_position,omitempty"`
 	ChecklistTaskID          int             `json:"checklist_task_id,omitempty"`
 	PollOptionID             string          `json:"poll_option_id,omitempty"`
@@ -85,26 +87,28 @@ func (mo *MessageOrigin) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
+	if v.Type == "" {
+		return missingDiscriminator("MessageOrigin")
+	}
+
+	mo.Type = v.Type
+
 	switch v.Type {
 	case MessageOriginTypeUser:
-		mo.Type = MessageOriginTypeUser
 		mo.MessageOriginUser = &MessageOriginUser{}
 		return json.Unmarshal(data, mo.MessageOriginUser)
 	case MessageOriginTypeHiddenUser:
-		mo.Type = MessageOriginTypeHiddenUser
 		mo.MessageOriginHiddenUser = &MessageOriginHiddenUser{}
 		return json.Unmarshal(data, mo.MessageOriginHiddenUser)
 	case MessageOriginTypeChat:
-		mo.Type = MessageOriginTypeChat
 		mo.MessageOriginChat = &MessageOriginChat{}
 		return json.Unmarshal(data, mo.MessageOriginChat)
 	case MessageOriginTypeChannel:
-		mo.Type = MessageOriginTypeChannel
 		mo.MessageOriginChannel = &MessageOriginChannel{}
 		return json.Unmarshal(data, mo.MessageOriginChannel)
 	}
 
-	return fmt.Errorf("unsupported MessageOrigin type")
+	return nil
 }
 
 func (mo *MessageOrigin) MarshalJSON() ([]byte, error) {
@@ -123,7 +127,7 @@ func (mo *MessageOrigin) MarshalJSON() ([]byte, error) {
 		return json.Marshal(mo.MessageOriginChannel)
 	}
 
-	return nil, fmt.Errorf("unsupported MessageOrigin type")
+	return marshalUnknownVariant("MessageOrigin", "type", mo.Type)
 }
 
 // MessageOriginUser https://core.telegram.org/bots/api#messageoriginuser
