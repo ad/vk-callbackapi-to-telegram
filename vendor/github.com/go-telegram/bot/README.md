@@ -6,7 +6,7 @@
 
 > [Telegram Group](https://t.me/gotelegrambotui)
 
-> Supports Bot API version: [10.3](https://core.telegram.org/bots/api#august-24-2026) from August 24, 2026
+> Supports Bot API version: [10.4](https://core.telegram.org/bots/api#november-9-2026) from November 9, 2026
 
 It's a Go zero-dependencies telegram bot framework
 
@@ -90,6 +90,19 @@ func handler(ctx context.Context, b *bot.Bot, update *models.Update) {
 If you want to use webhooks, instead of using `bot.Start`, you should use the `bot.StartWebhook` method to start the bot.
 Also, you should use `bot.WebhookHandler()` method as HTTP handler for your server.
 
+For a valid update, `WebhookHandler` returns HTTP 200 once a worker takes the
+update, and the worker then runs its matchers, middlewares and handler. With
+`bot.WithNotAsyncHandlers`, a request therefore waits for a free worker. If
+`StartWebhook` is not running, or the run stops or the request is canceled
+before a worker takes the update, it returns HTTP 503 so Telegram can retry,
+and the update is not handled. An unreadable request body gets HTTP 400 for
+the same reason.
+
+Cancel the context passed to `StartWebhook` to shut down. Handlers receive a
+context derived from it that is canceled when the run stops. `StartWebhook`
+waits for running handlers to return. Cancel it before shutting down the HTTP
+server, so that requests still waiting for a worker get 503 right away.
+
 ```go
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -97,16 +110,24 @@ func main() {
 
 	opts := []bot.Option{
 		bot.WithDefaultHandler(handler),
-		bot.WithWebhookSecretToken(os.Getenv("EXAMPLE_TELEGRAM_WEBHOOK_SECRET_TOKEN"))
+		bot.WithWebhookSecretToken(os.Getenv("EXAMPLE_TELEGRAM_WEBHOOK_SECRET_TOKEN")),
 	}
 
-	b, _ := bot.New(os.Getenv("EXAMPLE_TELEGRAM_BOT_TOKEN"), opts...)
+	b, err := bot.New(os.Getenv("EXAMPLE_TELEGRAM_BOT_TOKEN"), opts...)
+	if err != nil {
+		panic(err)
+	}
 
 	// call methods.SetWebhook if needed
 
-	go b.StartWebhook(ctx)
+	go func() {
+		if err := http.ListenAndServe(":2000", b.WebhookHandler()); err != nil {
+			log.Printf("webhook server: %v", err)
+			cancel()
+		}
+	}()
 
-	http.ListenAndServe(":2000", b.WebhookHandler())
+	b.StartWebhook(ctx)
 
 	// call methods.DeleteWebhook if needed
 }
@@ -120,6 +141,39 @@ func handler(ctx context.Context, b *bot.Bot, update *models.Update) {
 ```
 
 [Demo in examples](examples/echo_with_webhook/main.go)
+
+### Webhook replies
+
+A handler can also answer an update in the response to the webhook request that
+delivered it. However, Telegram does not report whether the call succeeded.
+See [Making requests when getting updates](https://core.telegram.org/bots/api#making-requests-when-getting-updates).
+
+Use `bot.WebhookReplyHandler()` as the HTTP handler instead of
+`bot.WebhookHandler()`. It runs the handler for each update in the goroutine
+serving the request and responds once the handler returns, so `bot.StartWebhook`
+is not needed. In the handler, call `bot.WebhookReply` with the method name and
+its parameters:
+
+```go
+func main() {
+	b, _ := bot.New(os.Getenv("EXAMPLE_TELEGRAM_BOT_TOKEN"), bot.WithDefaultHandler(handler))
+
+	http.ListenAndServe(":2000", b.WebhookReplyHandler())
+}
+
+func handler(ctx context.Context, b *bot.Bot, update *models.Update) {
+	b.WebhookReply(ctx, "sendMessage", &bot.SendMessageParams{
+		ChatID: update.Message.Chat.ID,
+		Text:   update.Message.Text,
+	})
+}
+```
+
+A handler can reply only once per update, and only before it returns.
+Otherwise, `bot.WebhookReply` returns an error wrapping
+`bot.ErrorWebhookReplyUnavailable`.
+
+[Demo in examples](examples/inline_mode_webhook_reply/main.go)
 
 Also, you can manually process updates with `bot.ProcessUpdate` method.
 
@@ -191,7 +245,8 @@ b, err := bot.New("YOUR_BOT_TOKEN_FROM_BOTFATHER", opts...)
 
 ## Message.Text and CallbackQuery.Data handlers
 
-For your convenience, you can use `Message.Text`, `CallbackQuery.Data` and `Message.Caption` handlers.
+For your convenience, you can match message text, photo captions, callback data,
+inline query text and widget query data.
 
 An example:
 
@@ -213,6 +268,28 @@ Handler Types:
 - `HandlerTypeCallbackQueryData` - for Update.CallbackQuery.Data field
 - `HandlerTypeCallbackQueryGameShortName` - for Update.CallbackQuery.GameShortName field
 - `HandlerTypePhotoCaption` - for Update.Message.Caption field
+- `HandlerTypeInlineQuery` - for Update.InlineQuery.Query field
+- `HandlerTypeWidgetQueryData` - for Update.WidgetQuery.Data field
+- `HandlerTypeSharedWidgetQueryData` - for Update.SharedWidgetQuery.Data field
+
+Use `RegisterHandlerInlineQuery(handler)` to handle all inline queries, including
+empty queries. It returns a handler ID and accepts optional middlewares, like
+`RegisterHandler`. To filter inline query text, use `RegisterHandler` with
+`HandlerTypeInlineQuery` and `MatchTypeExact`, `MatchTypePrefix`, or
+`MatchTypeContains`, or use `RegisterHandlerRegexp`. Inline queries have no message
+entities, so command match types do not match them.
+
+Widget query data supports exact, prefix, substring and regular-expression
+matching, for example:
+
+```go
+b.RegisterHandler(bot.HandlerTypeWidgetQueryData, "buy:", bot.MatchTypePrefix, widgetHandler)
+b.RegisterHandler(bot.HandlerTypeSharedWidgetQueryData, "buy:", bot.MatchTypePrefix, sharedWidgetHandler)
+```
+
+Read the query ID from `update.WidgetQuery.ID` or `update.SharedWidgetQuery.ID`
+and answer it with `b.AnswerWidgetQuery`. Widget queries have no message entities,
+so command match types do not match them.
 
 RegisterHandler returns a handler ID string. You can use it to remove the handler later.
 
@@ -245,8 +322,28 @@ matchFunc := func(update *models.Update) bool {
 	return true
 }
 
-b.RegisterHandlerMatchFunc(bot.HandlerTypeMessageText, matchFunc, myHandler)
+b.RegisterHandlerMatchFunc(matchFunc, myHandler)
 ```
+
+## Update user and chat
+
+Use `update.EffectiveUser()` and `update.EffectiveChat()` when a handler or
+middleware works with multiple update types:
+
+```go
+if user := update.EffectiveUser(); user != nil {
+    log.Printf("user ID: %d", user.ID)
+}
+if chat := update.EffectiveChat(); chat != nil {
+    log.Printf("chat ID: %d", chat.ID)
+}
+```
+
+Both helpers return pointers into the original update and are safe to call on a
+nil update. A user or chat may be unavailable, so check each result for nil.
+For widget queries, `EffectiveUser` returns the sender; `EffectiveChat` returns
+the widget's chat when present. Inline widget queries and shared widget queries
+have no chat.
 
 ## InputFile
 
@@ -478,7 +575,7 @@ if errors.Is(err, mybot.ErrorConflict) {
 
 ## Other
 
-- `bot.ID() int64` - returns bot ID. Bot ID is a unique identifier for the bot, obtained from the token as first part before `:`. Example: `110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw` - bot ID is `110201543`. If the bot token is invalid, the bot ID will be 0.
+- `bot.ID() int64` - returns bot ID. Bot ID is a unique identifier for the bot, obtained from the token as first part before `:`. Example: `110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw` - bot ID is `110201543`. Returns 0 if the prefix cannot be parsed as an `int64`, including overflow. This method does not validate or authenticate the token.
 - `bot.Token() string` - returns bot token
 - `bot.SetToken()` - set new bot token
 

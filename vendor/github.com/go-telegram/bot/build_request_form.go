@@ -109,12 +109,25 @@ func buildRequestForm(w *multipart.Writer, params any) (int, error) {
 
 	var fieldsCount int
 
+	// answerInlineQuery treats an omitted cache_time as 300 seconds. DisableCache
+	// is the only way to send 0, and it replaces CacheTime so the part is written once.
+	inlineQuery, _ := params.(*AnswerInlineQueryParams)
+	if inlineQuery != nil && inlineQuery.DisableCache {
+		if err := addFormFieldString(form, "cache_time", "0"); err != nil {
+			return 0, err
+		}
+		fieldsCount++
+	}
+
 	for i := 0; i < v.NumField(); i++ {
 		jsonTag := v.Type().Field(i).Tag.Get("json")
 		if jsonTag == "-" || jsonTag == "" {
 			continue
 		}
 		fieldName := strings.Split(jsonTag, ",")[0]
+		if inlineQuery != nil && inlineQuery.DisableCache && fieldName == "cache_time" {
+			continue
+		}
 		omitempty := strings.Contains(jsonTag, ",omitempty")
 
 		if omitempty && v.Field(i).IsZero() {
@@ -127,6 +140,7 @@ func buildRequestForm(w *multipart.Writer, params any) (int, error) {
 			if err != nil {
 				return 0, err
 			}
+			fieldsCount++
 			continue
 		}
 		if v.Field(i).Type().Implements(inputMediaInterface) {
@@ -134,6 +148,7 @@ func buildRequestForm(w *multipart.Writer, params any) (int, error) {
 			if err != nil {
 				return 0, err
 			}
+			fieldsCount++
 			continue
 		}
 
@@ -144,6 +159,7 @@ func buildRequestForm(w *multipart.Writer, params any) (int, error) {
 				if err != nil {
 					return 0, err
 				}
+				fieldsCount++
 				continue
 			}
 			if v.Field(i).Elem().Type().Implements(inputMediaInterface) {
@@ -151,6 +167,7 @@ func buildRequestForm(w *multipart.Writer, params any) (int, error) {
 				if err != nil {
 					return 0, err
 				}
+				fieldsCount++
 				continue
 			}
 		}
@@ -161,6 +178,12 @@ func buildRequestForm(w *multipart.Writer, params any) (int, error) {
 		switch vv := v.Field(i).Interface().(type) {
 		case string:
 			err = addFormFieldString(form, fieldName, vv)
+		case *string:
+			if vv == nil {
+				err = fmt.Errorf("nil value for field %s", fieldName)
+			} else {
+				err = addFormFieldString(form, fieldName, *vv)
+			}
 		case *models.InputFileUpload:
 			err = addFormFieldInputFileUpload(form, fieldName, vv)
 		case *models.InputFileString:

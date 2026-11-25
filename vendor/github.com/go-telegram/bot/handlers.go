@@ -14,6 +14,9 @@ const (
 	HandlerTypeCallbackQueryData
 	HandlerTypeCallbackQueryGameShortName
 	HandlerTypePhotoCaption
+	HandlerTypeInlineQuery
+	HandlerTypeWidgetQueryData
+	HandlerTypeSharedWidgetQueryData
 )
 
 type MatchType int
@@ -45,63 +48,117 @@ func (h handler) match(update *models.Update) bool {
 		return h.matchFunc(update)
 	}
 
-	var data string
-	var entities []models.MessageEntity
+	data, entities, ok := getDataFromUpdate(update, h.handlerType)
+	if !ok {
+		return false
+	}
 
-	switch h.handlerType {
+	switch h.matchType {
+	case MatchTypeExact:
+		return h.matchExact(data)
+	case MatchTypePrefix:
+		return h.matchPrefix(data)
+	case MatchTypeContains:
+		return h.matchContains(data)
+	case MatchTypeCommand:
+		return h.matchCommand(data, entities)
+	case MatchTypeCommandStartOnly:
+		return h.matchCommandStartOnly(data, entities)
+	case matchTypeRegexp:
+		return h.matchRegexp(data)
+	default:
+		return false
+	}
+}
+
+func getDataFromUpdate(update *models.Update, handlerType HandlerType) (data string, entities []models.MessageEntity, ok bool) {
+	switch handlerType {
 	case HandlerTypeMessageText:
 		if update.Message == nil {
-			return false
+			return "", nil, false
 		}
 		data = update.Message.Text
 		entities = update.Message.Entities
 	case HandlerTypeCallbackQueryData:
 		if update.CallbackQuery == nil {
-			return false
+			return "", nil, false
 		}
 		data = update.CallbackQuery.Data
 	case HandlerTypeCallbackQueryGameShortName:
 		if update.CallbackQuery == nil {
-			return false
+			return "", nil, false
 		}
 		data = update.CallbackQuery.GameShortName
 	case HandlerTypePhotoCaption:
 		if update.Message == nil {
-			return false
+			return "", nil, false
 		}
 		data = update.Message.Caption
 		entities = update.Message.CaptionEntities
+	case HandlerTypeInlineQuery:
+		if update.InlineQuery == nil {
+			return "", nil, false
+		}
+		data = update.InlineQuery.Query
+	case HandlerTypeWidgetQueryData:
+		if update.WidgetQuery == nil {
+			return "", nil, false
+		}
+		data = update.WidgetQuery.Data
+	case HandlerTypeSharedWidgetQueryData:
+		if update.SharedWidgetQuery == nil {
+			return "", nil, false
+		}
+		data = update.SharedWidgetQuery.Data
 	}
+	return data, entities, true
+}
 
-	if h.matchType == MatchTypeExact {
-		return data == h.pattern
+func (h handler) matchExact(data string) bool {
+	return data == h.pattern
+}
+
+func (h handler) matchPrefix(data string) bool {
+	return strings.HasPrefix(data, h.pattern)
+}
+
+func (h handler) matchContains(data string) bool {
+	return strings.Contains(data, h.pattern)
+}
+
+func (h handler) matchRegexp(data string) bool {
+	return h.re.Match([]byte(data))
+}
+
+func extractCommand(data string, entity models.MessageEntity) (string, bool) {
+	// Check the offset before subtracting, avoiding overflow in offset + length.
+	if entity.Offset < 0 || entity.Offset > len(data) || entity.Length <= 1 || entity.Length > len(data)-entity.Offset {
+		return "", false
 	}
-	if h.matchType == MatchTypePrefix {
-		return strings.HasPrefix(data, h.pattern)
-	}
-	if h.matchType == MatchTypeContains {
-		return strings.Contains(data, h.pattern)
-	}
-	if h.matchType == MatchTypeCommand {
-		for _, e := range entities {
-			if e.Type == models.MessageEntityTypeBotCommand {
-				if data[e.Offset+1:e.Offset+e.Length] == h.pattern {
-					return true
-				}
+	// Skipping the "/" character at the beginning of the command
+	return data[entity.Offset+1 : entity.Offset+entity.Length], true
+}
+
+func (h handler) matchCommand(data string, entities []models.MessageEntity) bool {
+	for _, e := range entities {
+		if e.Type == models.MessageEntityTypeBotCommand {
+			command, ok := extractCommand(data, e)
+			if ok && command == h.pattern {
+				return true
 			}
 		}
 	}
-	if h.matchType == MatchTypeCommandStartOnly {
-		for _, e := range entities {
-			if e.Type == models.MessageEntityTypeBotCommand {
-				if e.Offset == 0 && data[e.Offset+1:e.Offset+e.Length] == h.pattern {
-					return true
-				}
+	return false
+}
+
+func (h handler) matchCommandStartOnly(data string, entities []models.MessageEntity) bool {
+	for _, e := range entities {
+		if e.Type == models.MessageEntityTypeBotCommand && e.Offset == 0 {
+			command, ok := extractCommand(data, e)
+			if ok && command == h.pattern {
+				return true
 			}
 		}
-	}
-	if h.matchType == matchTypeRegexp {
-		return h.re.Match([]byte(data))
 	}
 	return false
 }
@@ -141,6 +198,13 @@ func (b *Bot) RegisterHandlerRegexp(handlerType HandlerType, re *regexp.Regexp, 
 	b.handlers = append(b.handlers, h)
 
 	return id
+}
+
+// RegisterHandlerInlineQuery registers a handler for all inline queries, including
+// empty queries. For matching query text, use RegisterHandler or RegisterHandlerRegexp
+// with HandlerTypeInlineQuery. Returns an ID that can be passed to UnregisterHandler.
+func (b *Bot) RegisterHandlerInlineQuery(f HandlerFunc, m ...Middleware) string {
+	return b.RegisterHandler(HandlerTypeInlineQuery, "", MatchTypePrefix, f, m...)
 }
 
 func (b *Bot) RegisterHandler(handlerType HandlerType, pattern string, matchType MatchType, f HandlerFunc, m ...Middleware) string {
